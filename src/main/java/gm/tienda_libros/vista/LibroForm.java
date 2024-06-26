@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 @Component
 public class LibroForm extends JFrame {
@@ -23,7 +25,10 @@ public class LibroForm extends JFrame {
     private JButton modificarButton;
     private JButton eliminarButton;
 
+    private JTextField idTexto;
     private DefaultTableModel tablaModeloLibros;//Modelo de la tabla
+
+    private boolean modificar = false;
 
     @Autowired
     public LibroForm(LibroServicio libroServicio) {
@@ -31,15 +36,108 @@ public class LibroForm extends JFrame {
 
         iniciarForma();//Llamar al método para iniciar la pantalla
         agregarButton.addActionListener(e -> agregarLibro());//Agregar un evento al botón agregar
+        tablaLibros.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                cargarLibroSeleccionado();
+                modificar = true;
+                agregarButton.setForeground(Color.RED);
+
+
+
+                //En caso de que desees que no se pueda agregar el mismo libro seleccionado
+                //agregarButton.setEnabled(false);
+            }
+
+        });
+        modificarButton.addActionListener(e -> {
+            modificarLibro();
+            agregarButton.setForeground(Color.BLACK);
+            //En caso de que desees que no se pueda agregar el mismo libro seleccionado
+            //agregarButton.setEnabled(true);
+        });
+
+
+        eliminarButton.addActionListener(e -> {
+            int id = tablaLibros.getSelectedRow();
+            if(id != -1) {
+                String idLibro = tablaLibros.getModel().getValueAt(id, 0).toString();
+                Libro modificarLibro = libroServicio.obtenerLibro(Integer.parseInt(idLibro));
+                if (modificarLibro != null) {
+                    libroServicio.eliminarLibro(modificarLibro);
+                    mostrarMensaje("Libro eliminado correctamente", 3);
+                    listarLibros();
+                    limpiarFormulario();
+                    return;
+                }
+                mostrarMensaje("No se puede eliminar el libro seleccionado", 2);
+                return;
+
+            }
+            mostrarMensaje("Debes de seleccionar un libro parar eliminarlo", 2);
+        });
+    }
+
+    private void modificarLibro() {
+        if(!idTexto.getText().isEmpty()){
+            int id = Integer.parseInt(idTexto.getText());
+            var libro = libroServicio.obtenerLibro(id);
+            if(libro != null){
+                if(libroTexto.getText().isEmpty()){
+                    mostrarMensaje("Proporciona los datos del libro a modificar", 2);
+                    libroTexto.requestFocusInWindow();
+                    return;
+                }
+
+                Libro modificarLibro = new Libro(id,libroTexto.getText(),autorTexto.getText(),Double.parseDouble(precioTexto.getText()), Integer.parseInt(cantidadTexto.getText()));
+                libroServicio.agregarLibro(modificarLibro);
+
+                mostrarMensaje("Libro modificado correctamente", 3);
+                listarLibros();
+                limpiarFormulario();
+                return;
+            }
+        }
+        mostrarMensaje("Debes de seleccionar un libro parar modificarlo", 2);
+    }
+
+    private void cargarLibroSeleccionado() {
+        // El índice de las columnas inician en 0
+        int id = tablaLibros.getSelectedRow();
+        if(id != -1){
+            String idLibro = tablaLibros.getModel().getValueAt(id, 0).toString();
+            idTexto.setText(idLibro);
+
+                libroTexto.setText(tablaLibros.getModel().getValueAt(id, 1).toString());
+                autorTexto.setText(tablaLibros.getModel().getValueAt(id, 2).toString());
+                precioTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 3).toString()));
+                cantidadTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 4).toString()));
+
+        }
     }
 
     private void agregarLibro() {
+        if (modificar) {
+            int respuesta = JOptionPane.showConfirmDialog(
+                    this,
+                    "¿Está seguro de que desea agregar el mismo libro dos veces?",
+                    "Agregar Libro Existente",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (respuesta == JOptionPane.YES_OPTION) {
+                modificar = false;
+                agregarLibro();
+            }
+            return;
+        }
+
         //Leer los datos del formulario
         if(libroTexto.getText().isEmpty() || autorTexto.getText().isEmpty() || precioTexto.getText().isEmpty()){
             mostrarMensaje("Los campos no pueden estar vacíos", 1);
             return;
         }
-        var libro = new Libro(libroTexto.getText(),autorTexto.getText(),Double.parseDouble(precioTexto.getText()));
+        var libro = new Libro(null,libroTexto.getText(),autorTexto.getText(),Double.parseDouble(precioTexto.getText()), Integer.parseInt(cantidadTexto.getText()));
         libroServicio.agregarLibro(libro);
         mostrarMensaje("Libro agregado correctamente", 3);
         listarLibros();
@@ -56,25 +154,16 @@ public class LibroForm extends JFrame {
     }
 
     private void mostrarMensaje(String mensaje, int tipoMensaje){
-        int tipo = 0;
-        switch (tipoMensaje){
-            case 1:
-                tipo = JOptionPane.INFORMATION_MESSAGE;
-                break;
-            case 2:
-                tipo = JOptionPane.WARNING_MESSAGE;
-                break;
-            case 3:
-                tipo = JOptionPane.PLAIN_MESSAGE;
-                break;
-            case 4:
-                tipo = JOptionPane.ERROR_MESSAGE;
-                break;
-            default:
+        int tipo = switch (tipoMensaje) {
+            case 1 -> JOptionPane.INFORMATION_MESSAGE;
+            case 2 -> JOptionPane.WARNING_MESSAGE;
+            case 3 -> JOptionPane.PLAIN_MESSAGE;
+            case 4 -> JOptionPane.ERROR_MESSAGE;
+            default -> {
                 mensaje = "Error Desconocido";
-                tipo = JOptionPane.ERROR_MESSAGE;
-                break;
-        }
+                yield JOptionPane.ERROR_MESSAGE;
+            }
+        };
         JOptionPane.showMessageDialog(this, mensaje, "Mensaje", tipo);
     }
     private void iniciarForma() {
@@ -92,11 +181,13 @@ public class LibroForm extends JFrame {
     }
 
     private void createUIComponents() {
+        idTexto = new JTextField();
+        idTexto.setVisible(false);
         // TODO: place custom component creation code here
         this.tablaModeloLibros = new DefaultTableModel(0,5);//Crear el modelo de la tabla
         String[] columnas = {"Id", "Nombre", "Autor", "Precio", "Cantidad"};
         this.tablaModeloLibros.setColumnIdentifiers(columnas);//Asignar los nombres de las columnas
-        //Instanciar la tabla
+        //Instance la tabla
         this.tablaLibros = new JTable(tablaModeloLibros);
         listarLibros();//Llamar al método para listar los libros
     }

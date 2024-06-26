@@ -24,9 +24,11 @@ public class Libro {
     Double precioLibro;
     Integer cantidadLibro;
 
-    public Libro(String text, String text1, double v) {
+    public Libro(int i,String text, String text1, double v, int c) {
+        this.idLibro = i;
         this.nombreLibro = text;
         this.autorLibro = text1;
         this.precioLibro = v;
+        this.cantidadLibro = c;
     }
 }
