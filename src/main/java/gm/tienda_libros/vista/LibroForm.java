@@ -28,6 +28,7 @@ public class LibroForm extends JFrame {
     private JButton modificarButton;
     private JButton eliminarButton;
     private JButton limpiarButton;
+    private JTabbedPane tabbedPane1;
     private JTextField idTexto;
     private DefaultTableModel tablaModeloLibros;  // Modelo de la tabla
 
@@ -64,12 +65,15 @@ public class LibroForm extends JFrame {
             }
             int id = Integer.parseInt(idTexto.getText());
             Libro libro = libroServicio.obtenerLibro(id);
-            if (libro != null) {
-                libroServicio.eliminarLibro(libro);
-                mostrarMensaje("Libro eliminado correctamente", 1);
-                listarLibros();
+            if(confirmarMensaje("¿Está seguro de que desea eliminar el libro?", "Eliminar Libro", JOptionPane.YES_NO_OPTION)) {
+                if (libro != null) {
+                    libroServicio.eliminarLibro(libro);
+                    mostrarMensaje("Libro " + libro.getNombreLibro() +"eliminado correctamente", 1);
+                    listarLibros();
+                }
+                limpiarFormulario();
             }
-            limpiarFormulario();
+
         });
 
         panel.addMouseListener(new MouseAdapter() {
@@ -230,6 +234,7 @@ public class LibroForm extends JFrame {
         this.tablaModeloLibros.setColumnIdentifiers(columnas);
         // Instanciar la tabla
         this.tablaLibros = new JTable(tablaModeloLibros);
+
         listarLibros();  // Llamar al método para listar los libros
     }
 
