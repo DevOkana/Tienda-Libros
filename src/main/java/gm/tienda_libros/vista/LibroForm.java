@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -43,9 +45,6 @@ public class LibroForm extends JFrame {
                 cargarLibroSeleccionado();
                 modificar = true;
                 agregarButton.setForeground(Color.RED);
-
-
-
                 //En caso de que desees que no se pueda agregar el mismo libro seleccionado
                 //agregarButton.setEnabled(false);
             }
@@ -58,25 +57,36 @@ public class LibroForm extends JFrame {
             //agregarButton.setEnabled(true);
         });
 
-
         eliminarButton.addActionListener(e -> {
-            int id = tablaLibros.getSelectedRow();
-            if(id != -1) {
-                String idLibro = tablaLibros.getModel().getValueAt(id, 0).toString();
-                Libro modificarLibro = libroServicio.obtenerLibro(Integer.parseInt(idLibro));
-                if (modificarLibro != null) {
-                    libroServicio.eliminarLibro(modificarLibro);
-                    mostrarMensaje("Libro eliminado correctamente", 3);
-                    listarLibros();
-                    limpiarFormulario();
-                    return;
-                }
-                mostrarMensaje("No se puede eliminar el libro seleccionado", 2);
-                return;
 
+            if(idTexto.getText().isEmpty()){
+                mostrarMensaje("Selecciona el libro a eliminar", 2);
+                return;
             }
-            mostrarMensaje("Debes de seleccionar un libro parar eliminarlo", 2);
+            int id = Integer.parseInt(idTexto.getText());
+            Libro libro = libroServicio.obtenerLibro(id);
+            if(libro != null){
+                libroServicio.eliminarLibro(libro);
+                mostrarMensaje("Libro eliminado correctamente", 1);
+                listarLibros();
+                limpiarFormulario();
+            }
+
+
+
         });
+
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+                if (libroTexto.getText().isEmpty() && autorTexto.getText().isEmpty() &&
+                        precioTexto.getText().isEmpty() && cantidadTexto.getText().isEmpty()) {
+                    agregarButton.setForeground(Color.BLACK);
+                }
+            }
+        });
+
     }
 
     private void modificarLibro() {
@@ -93,7 +103,7 @@ public class LibroForm extends JFrame {
                 Libro modificarLibro = new Libro(id,libroTexto.getText(),autorTexto.getText(),Double.parseDouble(precioTexto.getText()), Integer.parseInt(cantidadTexto.getText()));
                 libroServicio.agregarLibro(modificarLibro);
 
-                mostrarMensaje("Libro modificado correctamente", 3);
+                mostrarMensaje("Libro modificado correctamente", 1);
                 listarLibros();
                 limpiarFormulario();
                 return;
@@ -108,24 +118,17 @@ public class LibroForm extends JFrame {
         if(id != -1){
             String idLibro = tablaLibros.getModel().getValueAt(id, 0).toString();
             idTexto.setText(idLibro);
-
-                libroTexto.setText(tablaLibros.getModel().getValueAt(id, 1).toString());
-                autorTexto.setText(tablaLibros.getModel().getValueAt(id, 2).toString());
-                precioTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 3).toString()));
-                cantidadTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 4).toString()));
+            libroTexto.setText(tablaLibros.getModel().getValueAt(id, 1).toString());
+            autorTexto.setText(tablaLibros.getModel().getValueAt(id, 2).toString());
+            precioTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 1).toString()));
+            cantidadTexto.setText(String.valueOf(tablaLibros.getModel().getValueAt(id, 4).toString()));
 
         }
     }
 
     private void agregarLibro() {
         if (modificar) {
-            int respuesta = JOptionPane.showConfirmDialog(
-                    this,
-                    "¿Está seguro de que desea agregar el mismo libro dos veces?",
-                    "Agregar Libro Existente",
-                    JOptionPane.YES_NO_OPTION
-            );
-            if (respuesta == JOptionPane.YES_OPTION) {
+            if(ConfirmarMensaje("¿Está seguro de que desea agregar el mismo libro dos veces?", "Agregar Libro Existente", JOptionPane.YES_NO_OPTION)){
                 modificar = false;
                 agregarLibro();
             }
@@ -139,7 +142,7 @@ public class LibroForm extends JFrame {
         }
         var libro = new Libro(null,libroTexto.getText(),autorTexto.getText(),Double.parseDouble(precioTexto.getText()), Integer.parseInt(cantidadTexto.getText()));
         libroServicio.agregarLibro(libro);
-        mostrarMensaje("Libro agregado correctamente", 3);
+        mostrarMensaje("Libro agregado correctamente", 1);
         listarLibros();
         //Limpiar los campos de texto
         limpiarFormulario();
@@ -157,8 +160,7 @@ public class LibroForm extends JFrame {
         int tipo = switch (tipoMensaje) {
             case 1 -> JOptionPane.INFORMATION_MESSAGE;
             case 2 -> JOptionPane.WARNING_MESSAGE;
-            case 3 -> JOptionPane.PLAIN_MESSAGE;
-            case 4 -> JOptionPane.ERROR_MESSAGE;
+            case 3 -> JOptionPane.ERROR_MESSAGE;
             default -> {
                 mensaje = "Error Desconocido";
                 yield JOptionPane.ERROR_MESSAGE;
@@ -166,6 +168,20 @@ public class LibroForm extends JFrame {
         };
         JOptionPane.showMessageDialog(this, mensaje, "Mensaje", tipo);
     }
+
+    private Boolean ConfirmarMensaje(String mensaje, String titulo, int tipoPanel){
+        int respuesta = JOptionPane.showConfirmDialog(
+                this,
+                mensaje,
+                titulo,
+                tipoPanel
+        );
+        if (respuesta == JOptionPane.YES_OPTION) {
+            return true;
+        }
+        return false;
+    }
+
     private void iniciarForma() {
         setContentPane(panel);
         setTitle("Control sobre las venta");
