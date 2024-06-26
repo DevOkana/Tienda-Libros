@@ -11,25 +11,20 @@ import java.util.List;
 
 @Service
 public class LibroServicio implements ILibroServicio {
-
     @Autowired
     private LibroRepositorio libroRepositorio;
-
     @Override
     public List<Libro> listarLibros() {
         return libroRepositorio.findAll();
     }
-
     @Override
     public Libro obtenerLibro(int idLibro) {
         return libroRepositorio.findById(idLibro).orElse(null);
     }
-
     @Override
     public void agregarLibro(Libro libro) {
         libroRepositorio.save(libro);
     }
-
     @Override
     public void eliminarLibro(Libro libro) {
         libroRepositorio.delete(libro);
