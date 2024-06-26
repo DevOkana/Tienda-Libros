@@ -104,7 +104,7 @@
                   <text value="Cantidad"/>
                 </properties>
               </component>
-              <component id="d9196" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+              <component id="d9196" class="javax.swing.JTextField" binding="cantidadTexto">
                 <constraints>
                   <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="-1"/>

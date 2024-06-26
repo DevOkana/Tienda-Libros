@@ -23,4 +23,10 @@ public class Libro {
     String autorLibro;
     Double precioLibro;
     Integer cantidadLibro;
+
+    public Libro(String text, String text1, double v) {
+        this.nombreLibro = text;
+        this.autorLibro = text1;
+        this.precioLibro = v;
+    }
 }
