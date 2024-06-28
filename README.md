@@ -24,7 +24,7 @@
 
 1. **Clonar el repositorio**
     ```sh
-    git clone https://github.com/tu-usuario/tienda-libros.git
+    git clone https://github.com/DevOkana/tienda-libros.git
     cd tienda-libros
     ```
 
