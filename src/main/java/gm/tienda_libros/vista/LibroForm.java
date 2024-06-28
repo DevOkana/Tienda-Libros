@@ -1,6 +1,7 @@
 package gm.tienda_libros.vista;
 
 import gm.tienda_libros.modelo.Libro;
+import gm.tienda_libros.servicio.DataBaseUtils;
 import gm.tienda_libros.servicio.LibroServicio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -9,15 +10,16 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 @Component
 public class LibroForm extends JFrame {
 
     private final LibroServicio libroServicio;  // Servicio de libros
+    private final DataBaseUtils databaseService;  // Servicio para obtener nombres de tablas
+
     private JPanel panel;  // Panel principal
     private JTable tablaLibros;  // Tabla para mostrar los libros
     private JTextField libroTexto;
@@ -29,14 +31,16 @@ public class LibroForm extends JFrame {
     private JButton eliminarButton;
     private JButton limpiarButton;
     private JTabbedPane tabbedPane1;
+    private JComboBox<String> comboBoxTable;
     private JTextField idTexto;
     private DefaultTableModel tablaModeloLibros;  // Modelo de la tabla
 
     private boolean modificar = false;
 
     @Autowired
-    public LibroForm(LibroServicio libroServicio) {
+    public LibroForm(LibroServicio libroServicio, DataBaseUtils databaseService) {
         this.libroServicio = libroServicio;
+        this.databaseService = databaseService;
 
         iniciarForma();  // Llamar al método para iniciar la pantalla
         agregarButton.addActionListener(e -> agregarLibro());  // Agregar un evento al botón agregar
@@ -68,7 +72,7 @@ public class LibroForm extends JFrame {
             if(confirmarMensaje("¿Está seguro de que desea eliminar el libro?", "Eliminar Libro", JOptionPane.YES_NO_OPTION)) {
                 if (libro != null) {
                     libroServicio.eliminarLibro(libro);
-                    mostrarMensaje("Libro " + libro.getNombreLibro() +"eliminado correctamente", 1);
+                    mostrarMensaje("Libro " + libro.getNombreLibro() +" eliminado correctamente", 1);
                     listarLibros();
                 }
                 limpiarFormulario();
@@ -87,7 +91,8 @@ public class LibroForm extends JFrame {
                 }
             }
         });
-        //Agregar modificadores en una tabla directamente
+
+        // Agregar modificadores en una tabla directamente
         tablaModeloLibros.addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE) {
                 int row = e.getFirstRow();
@@ -115,9 +120,9 @@ public class LibroForm extends JFrame {
                 }
             }
         });
-        limpiarButton.addActionListener(e ->{
-            limpiarFormulario();
-        });
+        limpiarButton.addActionListener(e -> limpiarFormulario());
+
+        poblarComboBoxTable();  // Llamar al método para poblar el JComboBox
     }
 
     private void modificarLibro() {
@@ -188,6 +193,13 @@ public class LibroForm extends JFrame {
         cantidadTexto.setText("");
     }
 
+    private void poblarComboBoxTable() {
+        List<String> tableNames = databaseService.getEntityNames();
+        for (String tableName : tableNames) {
+            comboBoxTable.addItem(tableName);
+        }
+    }
+
     private void mostrarMensaje(String mensaje, int tipoMensaje) {
         int tipo = switch (tipoMensaje) {
             case 1 -> JOptionPane.INFORMATION_MESSAGE;
@@ -234,7 +246,6 @@ public class LibroForm extends JFrame {
         this.tablaModeloLibros.setColumnIdentifiers(columnas);
         // Instanciar la tabla
         this.tablaLibros = new JTable(tablaModeloLibros);
-
         listarLibros();  // Llamar al método para listar los libros
     }
 
